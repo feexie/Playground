@@ -1,10 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
 #include "main.h"
 
 /**
@@ -23,47 +16,44 @@
  *  -Hsndles command execution usinf execve and waits for child processes.
  *
  *  Overall, this shell provides a basic command-line interface and showcase fundemental
- *  concept of input parsing and execution. 
+ *  concept of input parsing and execution.
  */
-int main()	
-{	
-	while (1)
+int main(int argc, char **argv)
+{
+	int main = 1, errors = 0, exit_code = 0, isexe;
+	char **command = NULL;
+
+	while (main)
 	{
-		printf("$ ");
-
-		char user_input[100];
-
-
-		ssize_t read_chars = my_getline(user_input, sizeof(user_input));
-
-		if (read_chars == -1)
+		command = fetch_command(&shell);
+		if (command != NULL)
 		{
-			printf("\n");
-			break;
+			if (strcmp(command[0], "exit") == 0)
+			{
+				free_command(command);
+				break;
+			}
+			if (strcmp(command[0], "env") == 0)
+			{
+				penvf();
+				exit_code = 0;
+				free_command(command);
+				continue;
+			}
+			isexe = isexef(&command[0]);
+			if (isexe == 0)
+			{
+				(errors)++;
+				fprintf(stderr, "%s: %d: %s: NOT FOUND\n", av[0], errors, command[0]);
+				exit_code = 666;
+				free_command(command);
+				continue;
+			}
+			else if (isexe == 1)
+				findpathf(command[0]);
+			execute_command(command, &errors, &exit_code);
 		}
+	}
+	return (exit_code);
+}
 
-
-		char command[50];
-		char *args[10];
-		split_command(user_input, command, args);
-
-		execute_command(command, args);
-
-		printf("$ ");
-	
-		if (strcmp(command, "exit") == 0)
-		{
-			if (args[1])
-			{
-				int exit_status = atoi(args[1]);
-				exit(exit_status);
-			}
-			else
-			{
-			exit(0);
-			}
-			}
-			}
-			return 0;
-			}
-					
